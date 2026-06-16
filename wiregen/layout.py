@@ -29,11 +29,37 @@ WRAP_GAP = 12.0
 WRAP_CLEAR = 30.0       # wrap clearance for parts with pin numbers
 WRAP_CLEAR_MIN = 13.0   # wrap clearance for parts with nothing protruding
 TRACK_MARGIN = 30.0     # keep elbow tracks this far inside the channel edges
-TOP = 48.0 + 54.0 + 44.0   # margin + title band + lane band
+TOP = 48.0 + 54.0 + 30.0   # margin + title band + lane band
 LEFT = 48.0
 CARD_W = 236.0
 CARD_GAP = 24.0
 ROW_H = 24.0
+CARD_PAD = 14.0         # inner horizontal padding for card content
+TEXT_LH = 15.0          # line height for wrapped free-text notes
+FIRST_ROW = 48.0        # first content baseline below the card top (30 band + 18)
+_TEXT_CHAR_W = 5.05     # ~avg glyph width at the 10.5px note font, for wrapping
+
+
+def wrap_card_text(text: str) -> list[str]:
+    """Greedy word-wrap a free-text note to the card's inner width. Newlines in
+    the source separate paragraphs, rendered with a blank line between them."""
+    max_chars = max(1, int((CARD_W - 2 * CARD_PAD) / _TEXT_CHAR_W))
+    lines: list[str] = []
+    paragraphs = [p for p in text.split("\n") if p.strip()]
+    for pi, para in enumerate(paragraphs):
+        if pi > 0:
+            lines.append("")        # blank line between paragraphs
+        cur = ""
+        for word in para.split():
+            cand = f"{cur} {word}".strip()
+            if not cur or len(cand) <= max_chars:
+                cur = cand
+            else:
+                lines.append(cur)
+                cur = word
+        if cur:
+            lines.append(cur)
+    return lines
 
 
 @dataclass
@@ -351,7 +377,14 @@ def build(diagram: Diagram, lib: Library, theme: Theme = DEFAULT_THEME) -> Geome
     cy = TOP
     for ann in diagram.annotations:
         rows = ann.rows
-        h = 38 + len(rows) * ROW_H + (28 if ann.text else 0) + 12
+        n = len(rows)
+        lines = wrap_card_text(ann.text) if ann.text else []
+        # baseline of the last drawn line; +18 below matches the header gap above
+        if lines:
+            last = FIRST_ROW + n * ROW_H + (len(lines) - 1) * TEXT_LH
+        else:
+            last = FIRST_ROW + (n - 1) * ROW_H
+        h = last + 18
         cards.append(PlacedCard(Box(cx, cy, CARD_W, h), ann.card, rows, ann.text))
         cy += h + CARD_GAP
 

@@ -1,5 +1,6 @@
-title: PCM1808 ADC to DSPi (I2S input)
-subtitle: Raspberry Pi Pico 2 as I2S clock master; PCM1808 configured as slave
+title: Connecting a PCM1808 ADC via I2S Input
+subtitle: Everything you need to know in order to achieve working analog input
+grid: true
 
 parts:
   adc:
@@ -37,15 +38,25 @@ connections:
   - { from: adc.MD0, to: adc.GND }
 
 annotations:
-  - card: DSPi I2S input
+  - card: DSPi Console Configuration
     rows:
-      Input source: I2S
-      Sample rate: 48 kHz
-      Clock role: DSPi is master
-      MCK: 256x (drives SCKI)
-      Data pin: GP4 (default)
+      Input Source: I2S
+      Master Clock: Enabled
+      Master Clock Multiplier: 256x
+      Master Clock Pin: GPIO 13 (Default)
+      Audio Data Pin: GPIO 4 (Default)
+      LRCK Pin: GPIO 15 (Default)
+      BCK: GPIO 14 (Default)
   - card: PCM1808 Mode Pins
     rows:
       MD1: LOW
       MD0: LOW
       FMT: LOW
+  - card: Setup Notes
+    text: >-
+      The purple PCM1808 ADC module commonly found on Amazon and AliExpress
+      exhibits a known design flaw.
+
+      The two ceramic input filter capacitors are of an incorrect value and
+      greatly attenuate audio frequencies above 200Hz. These capacitors should
+      be removed.

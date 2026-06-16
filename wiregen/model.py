@@ -48,7 +48,7 @@ class Decoration(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    type: Literal["cap", "resistor", "ic", "dot", "hole"]
+    type: Literal["cap", "resistor", "ic", "dot", "hole", "button", "logo"]
     at: tuple[float, float]
     r: Optional[float] = None      # cap/dot radius (px)
     w: Optional[float] = None      # resistor/ic width (px)
@@ -132,3 +132,4 @@ class Diagram(BaseModel):
     connections: list[Connection] = Field(default_factory=list)
     annotations: list[Annotation] = Field(default_factory=list)
     theme: Optional[str] = None
+    grid: bool = False                 # draw a faint background grid

@@ -5,16 +5,20 @@ legible crossings, info cards, and a signal legend."""
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from xml.sax.saxutils import escape
 
-from .layout import Geometry, PlacedCard, PlacedPart, RoutedWire
+from .layout import Geometry, PlacedCard, PlacedPart, RoutedWire, wrap_card_text
 from .theme import DEFAULT_THEME, Theme
 
 PAD_W = 9.0
 PAD_H = 6.0
 
+# Raspberry Pi logo, as a single path in a 16x16 box (Font Awesome, CC BY 4.0).
+_RPI_LOGO = (Path(__file__).parent / "assets" / "rpi_logo_path.txt").read_text().strip()
 
-def render(geo: Geometry, theme: Theme = DEFAULT_THEME) -> str:
+
+def render(geo: Geometry, theme: Theme = DEFAULT_THEME, grid: bool = False) -> str:
     s: list[str] = []
     s.append(
         f'<svg xmlns="http://www.w3.org/2000/svg" '
@@ -25,6 +29,9 @@ def render(geo: Geometry, theme: Theme = DEFAULT_THEME) -> str:
     s.append(_defs(theme))
     s.append(f'<rect width="{geo.width:.0f}" height="{geo.height:.0f}" '
              f'fill="{theme.bg}"/>')
+    if grid:
+        s.append(f'<rect width="{geo.width:.0f}" height="{geo.height:.0f}" '
+                 f'fill="url(#wg-grid)"/>')
 
     # title
     if geo.title:
@@ -55,7 +62,14 @@ def _defs(theme: Theme) -> str:
         '<feDropShadow dx="0" dy="3" stdDeviation="5" '
         'flood-color="#0f172a" flood-opacity="0.16"/></filter>'
     )
-    return f"<defs>{shadow}</defs>"
+    g = theme.grid_size
+    grid = (
+        f'<pattern id="wg-grid" width="{g:.0f}" height="{g:.0f}" '
+        f'patternUnits="userSpaceOnUse">'
+        f'<path d="M {g:.0f} 0 L 0 0 0 {g:.0f}" fill="none" '
+        f'stroke="{theme.grid_line}" stroke-width="1"/></pattern>'
+    )
+    return f"<defs>{shadow}{grid}</defs>"
 
 
 # --- parts ------------------------------------------------------------------
@@ -85,6 +99,15 @@ def _body_rect(box, fill, stroke, sw, r, shadow) -> str:
             f'stroke-width="{sw}"{filt}/>')
 
 
+def _label_lines(label: str) -> list[str]:
+    """Split a trailing parenthetical onto its own line, e.g.
+    'PCM1808 ADC (AliExpress)' -> ['PCM1808 ADC', '(AliExpress)']."""
+    idx = label.find(" (")
+    if idx != -1 and label.rstrip().endswith(")"):
+        return [label[:idx].strip(), label[idx + 1:].strip()]
+    return [label]
+
+
 def _part_pcb(p: PlacedPart, theme: Theme) -> str:
     b = p.box
     fill = p.color or theme.pcb_fill
@@ -99,17 +122,21 @@ def _part_pcb(p: PlacedPart, theme: Theme) -> str:
     out.append(_decorations(p, theme))
     has_top = any(pin.side == "top" for pin in p.pins)
     if has_top:
-        # identity below the board so it clears the top pins/components
-        out.append(f'<text x="{b.cx:.1f}" y="{b.bottom+18:.1f}" '
-                   f'text-anchor="middle" font-size="12.5" font-weight="700" '
-                   f'fill="{theme.title_color}">{escape(p.label)}</text>')
+        # top pins occupy the upper edge, so the identity sits on the board near
+        # the bottom; a trailing "(...)" drops to its own line
+        lines = _label_lines(p.label)
+        for i, ln in enumerate(reversed(lines)):
+            ly = b.bottom - 8 - i * 11
+            out.append(f'<text x="{b.cx:.1f}" y="{ly:.1f}" text-anchor="middle" '
+                       f'font-size="9" font-weight="700" '
+                       f'fill="#ffffff">{escape(ln)}</text>')
     else:
-        out.append(f'<text x="{b.cx:.1f}" y="{b.y+20:.1f}" text-anchor="middle" '
-                   f'font-size="13" font-weight="700" fill="{theme.pcb_title}">'
+        out.append(f'<text x="{b.cx:.1f}" y="{b.y+18:.1f}" text-anchor="middle" '
+                   f'font-size="9" font-weight="700" fill="{theme.pcb_title}">'
                    f'{escape(p.label)}</text>')
     for pin in p.pins:
-        out.append(_pad(pin, theme.pcb_pad, theme.pcb_pad_stroke))
-        out.append(_pin_label(pin, theme.pcb_title, theme.pin_number, b))
+        out.append(_pad(pin, theme.pcb_pad, theme.pcb_pad_stroke, pin.number))
+        out.append(_pin_label(pin, theme.pcb_title, b))
     return "<g>" + "".join(out) + "</g>"
 
 
@@ -190,6 +217,36 @@ def _decoration_shape(d, cx: float, cy: float) -> str:
                      f'transform="rotate(-90 {cx:.1f} {cy:.1f})">'
                      f'{escape(d.label)}</text>')
         return "".join(s)
+    if d.type == "logo":
+        # the real Raspberry Pi mark, in white silkscreen; the source path lives
+        # in a 16x16 box, so scale by r/8 (r = half-size) and centre on (cx, cy)
+        s = d.r or 16.0
+        k = s / 8.0
+        tx = cx - 8 * k
+        ty = cy - 8 * k
+        return (f'<g transform="translate({tx:.2f} {ty:.2f}) scale({k:.4f})">'
+                f'<path d="{_RPI_LOGO}" fill="#eef5f0"/></g>')
+    if d.type == "button":
+        w = d.w or 28.0
+        h = d.h or 16.0
+        x = cx - w / 2
+        y = cy - h / 2
+        ar = min(w, h) * 0.34          # round actuator in the middle
+        s = [
+            # dark SMD housing
+            f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" '
+            f'rx="2.5" fill="#2b2f36" stroke="#0a0c0f" stroke-width="0.8"/>',
+            # silver actuator
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{ar:.1f}" fill="#c7ccd1" '
+            f'stroke="#8b9197" stroke-width="1"/>',
+        ]
+        if d.label:
+            # white silkscreen caption below the button
+            fs = max(5.5, h * 0.42)
+            s.append(f'<text x="{cx:.1f}" y="{y+h+fs+1:.1f}" '
+                     f'text-anchor="middle" font-size="{fs:.1f}" '
+                     f'font-weight="700" fill="#eaf2ec">{escape(d.label)}</text>')
+        return "".join(s)
     if d.type == "hole":
         r = d.r or 8.0
         # plated mounting hole: light annular pad with a dark bore
@@ -215,8 +272,8 @@ def _part_chip(p: PlacedPart, theme: Theme) -> str:
                f'font-size="13" font-weight="700" fill="{theme.chip_title}">'
                f'{escape(p.label)}</text>')
     for pin in p.pins:
-        out.append(_pad(pin, theme.chip_pad, theme.chip_pad))
-        out.append(_pin_label(pin, theme.chip_title, theme.pin_number, b))
+        out.append(_pad(pin, theme.chip_pad, theme.chip_pad, pin.number))
+        out.append(_pin_label(pin, theme.chip_title, b))
     return "<g>" + "".join(out) + "</g>"
 
 
@@ -233,12 +290,32 @@ def _part_card(p: PlacedPart, theme: Theme) -> str:
                f'font-size="12.5" font-weight="700" fill="#ffffff">'
                f'{escape(p.label)}</text>')
     for pin in p.pins:
-        out.append(_pad(pin, theme.module_pad, theme.module_pad_stroke))
-        out.append(_pin_label(pin, theme.pin_label, theme.pin_number, b))
+        out.append(_pad(pin, theme.module_pad, theme.module_pad_stroke,
+                        pin.number))
+        out.append(_pin_label(pin, theme.pin_label, b))
     return "<g>" + "".join(out) + "</g>"
 
 
-def _pad(pin, fill, stroke) -> str:
+NUMPAD_W = 16.0          # enlarged side pad that carries the physical pin number
+NUMPAD_H = 11.0
+
+
+def _pad(pin, fill, stroke, number=None, num_color="#3f3f46") -> str:
+    # A numbered side pin gets an enlarged pad printed with its number, sitting
+    # mostly outside the board edge so the wire lands on it and emerges from its
+    # outer edge — the number is on opaque copper, never crossed by a wire.
+    if number and pin.side in ("left", "right"):
+        if pin.side == "left":
+            x = pin.x - (NUMPAD_W - 4)        # spans pin.x-12 .. pin.x+4
+        else:
+            x = pin.x - 4                     # spans pin.x-4 .. pin.x+12
+        y = pin.y - NUMPAD_H / 2
+        return (f'<rect x="{x:.1f}" y="{y:.1f}" width="{NUMPAD_W:.1f}" '
+                f'height="{NUMPAD_H:.1f}" rx="2.5" fill="{fill}" stroke="{stroke}" '
+                f'stroke-width="1"/>'
+                f'<text x="{x+NUMPAD_W/2:.1f}" y="{pin.y+3:.1f}" '
+                f'text-anchor="middle" font-size="8" font-weight="600" '
+                f'fill="{num_color}">{escape(number)}</text>')
     if pin.side in ("left", "right"):
         x = pin.x - PAD_W / 2
         y = pin.y - PAD_H / 2
@@ -251,24 +328,17 @@ def _pad(pin, fill, stroke) -> str:
             f'rx="1.5" fill="{fill}" stroke="{stroke}" stroke-width="1"/>')
 
 
-def _pin_label(pin, label_color, num_color, box) -> str:
+def _pin_label(pin, label_color, box) -> str:
+    # the physical pin number now lives on the pad itself; this draws the name
     out = []
     if pin.side == "left":
         out.append(f'<text x="{box.x+9:.1f}" y="{pin.y+3.5:.1f}" '
                    f'text-anchor="start" font-size="10.5" '
                    f'fill="{label_color}">{escape(pin.text)}</text>')
-        if pin.number:
-            out.append(f'<text x="{box.x-8:.1f}" y="{pin.y+3:.1f}" '
-                       f'text-anchor="end" font-size="8.5" '
-                       f'fill="{num_color}">{escape(pin.number)}</text>')
     elif pin.side == "right":
         out.append(f'<text x="{box.right-9:.1f}" y="{pin.y+3.5:.1f}" '
                    f'text-anchor="end" font-size="10.5" '
                    f'fill="{label_color}">{escape(pin.text)}</text>')
-        if pin.number:
-            out.append(f'<text x="{box.right+8:.1f}" y="{pin.y+3:.1f}" '
-                       f'text-anchor="start" font-size="8.5" '
-                       f'fill="{num_color}">{escape(pin.number)}</text>')
     else:  # top / bottom: gap to the pad matches the side pins' inset
         if pin.side == "top":
             y = box.y + 16        # pad bottom (+4.5) + 4.5 gap + cap height
@@ -347,8 +417,11 @@ def _card(c: PlacedCard, theme: Theme) -> str:
                    f'{escape(v)}</text>')
         y += 24
     if c.text:
-        out.append(f'<text x="{b.x+14:.1f}" y="{y:.1f}" font-size="10.5" '
-                   f'fill="{theme.card_key}">{escape(c.text)}</text>')
+        for line in wrap_card_text(c.text):
+            if line:
+                out.append(f'<text x="{b.x+14:.1f}" y="{y:.1f}" font-size="10.5" '
+                           f'fill="{theme.card_key}">{escape(line)}</text>')
+            y += 15
     return "<g>" + "".join(out) + "</g>"
 
 
@@ -363,10 +436,11 @@ def _top_round(b, r) -> str:
 def _legend(geo: Geometry, theme: Theme) -> str:
     if not geo.legend:
         return ""
-    x = 48.0
     y = geo.height - 38
     items = geo.legend
     w = 24 + sum(70 + len(lbl) * 6 for lbl, _ in items)
+    # centre the legend bar horizontally in the canvas
+    x = (geo.width - w) / 2 + 12
     out = [f'<rect x="{x-12:.1f}" y="{y-20:.1f}" width="{w:.0f}" height="34" '
            f'rx="9" fill="{theme.legend_fill}" stroke="{theme.legend_stroke}" '
            f'stroke-width="1.5"/>']

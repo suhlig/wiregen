@@ -54,6 +54,8 @@ class Theme:
 
     # canvas
     bg: str = "#161619"
+    grid_line: str = "#26262c"     # faint background grid (when enabled)
+    grid_size: float = 64.0
     margin: float = 48.0
     font: str = "'Inter', 'Helvetica Neue', Arial, sans-serif"
     mono: str = "'SF Mono', 'JetBrains Mono', Menlo, monospace"
@@ -89,7 +91,7 @@ class Theme:
 
     # pins
     pin_label: str = "#e4e4e7"
-    pin_number: str = "#8b8b93"
+    pin_number: str = "#c4c4cc"
     pin_pad_r: float = 4.0
 
     # wires (casing is the background: a clean knockout at crossings)
@@ -123,7 +125,7 @@ _NEUTRAL_DARK = Theme(name="neutral-dark")
 
 _CARBON = replace(
     _NEUTRAL_DARK, name="carbon",
-    bg="#0a0a0a", wire_casing="#0a0a0a",
+    bg="#0a0a0a", wire_casing="#0a0a0a", grid_line="#191919",
     body_fill="#18181b", body_stroke="#2a2a2e",
     pcb_fill="#171717", pcb_stroke="#2a2a2e", pcb_pad="#e5e5e5", pcb_pad_stroke="#525252",
     module_fill="#18181b", module_accent="#27272a", module_pad="#e5e5e5",
@@ -135,7 +137,7 @@ _CARBON = replace(
 
 _MIDNIGHT = replace(
     _NEUTRAL_DARK, name="midnight",
-    bg="#0b1120", wire_casing="#0b1120",
+    bg="#0b1120", wire_casing="#0b1120", grid_line="#16203a",
     title_color="#e2e8f0", subtitle_color="#94a3b8",
     body_fill="#111a30", body_stroke="#1f2a44", body_title="#e2e8f0",
     pcb_fill="#0f1830", pcb_stroke="#1f2a44", pcb_title="#e2e8f0",
@@ -143,7 +145,7 @@ _MIDNIGHT = replace(
     module_fill="#111a30", module_accent="#1e293b", module_pad="#cbd5e1",
     module_pad_stroke="#475569",
     chip_fill="#0c1426", chip_title="#e2e8f0",
-    pin_label="#e2e8f0", pin_number="#64748b",
+    pin_label="#e2e8f0", pin_number="#a3b2c8",
     card_fill="#111a30", card_stroke="#1f2a44", card_title_bg="#1e293b",
     card_title_fg="#e2e8f0", card_key="#94a3b8", card_value="#e2e8f0",
     legend_fill="#111a30", legend_stroke="#1f2a44",
@@ -152,7 +154,7 @@ _MIDNIGHT = replace(
 
 _LIGHT = replace(
     _NEUTRAL_DARK, name="light",
-    bg="#fbfcfe", wire_casing="#fbfcfe",
+    bg="#fbfcfe", wire_casing="#fbfcfe", grid_line="#e7ecf3",
     title_color="#0f172a", subtitle_color="#64748b",
     body_fill="#ffffff", body_stroke="#cbd5e1", body_title="#0f172a",
     pcb_fill="#1f6f4a", pcb_stroke="#14532d", pcb_title="#ecfdf5",
@@ -160,7 +162,7 @@ _LIGHT = replace(
     module_fill="#ffffff", module_accent="#6366f1", module_pad="#6366f1",
     module_pad_stroke="#4f46e5",
     chip_fill="#1e293b", chip_title="#e2e8f0",
-    pin_label="#0f172a", pin_number="#94a3b8",
+    pin_label="#0f172a", pin_number="#475569",
     card_fill="#ffffff", card_stroke="#e2e8f0", card_title_bg="#6366f1",
     card_title_fg="#ffffff", card_key="#475569", card_value="#0f172a",
     legend_fill="#ffffff", legend_stroke="#e2e8f0",

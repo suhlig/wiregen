@@ -47,7 +47,7 @@ def cmd_render(args) -> int:
     except KeyError as e:
         print(e, file=sys.stderr)
         return 1
-    svg = render(build(diagram, lib, theme), theme)
+    svg = render(build(diagram, lib, theme), theme, grid=args.grid or diagram.grid)
     out = args.out or str(Path(args.diagram).with_suffix(".svg"))
     Path(out).write_text(svg)
     print(f"wrote {out}")
@@ -120,6 +120,8 @@ def main(argv=None) -> int:
     r.add_argument("diagram")
     r.add_argument("-o", "--out")
     r.add_argument("--theme", help=f"colour scheme ({', '.join(THEMES)})")
+    r.add_argument("--grid", action="store_true",
+                   help="draw a faint background grid")
     r.add_argument("--table", action="store_true",
                    help="also print the connection table")
     r.set_defaults(func=cmd_render)
