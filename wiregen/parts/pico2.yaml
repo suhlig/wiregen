@@ -1,0 +1,50 @@
+id: pico2
+name: Raspberry Pi Pico 2
+package: board
+style: pcb
+connector: usb
+description: RP2350 board, 40-pin dual header in physical order (USB at top).
+width: 150
+pins:
+  # --- left header, physical pins 1..20, top to bottom ---
+  - { name: GP0,  side: left, signal: gpio, number: "1" }
+  - { name: GP1,  side: left, signal: gpio, number: "2" }
+  - { name: GND,  side: left, signal: power, net: gnd, number: "3" }
+  - { name: GP2,  side: left, signal: gpio, number: "4" }
+  - { name: GP3,  side: left, signal: gpio, number: "5" }
+  - { name: GP4,  side: left, signal: gpio, number: "6" }
+  - { name: GP5,  side: left, signal: gpio, number: "7" }
+  - { name: GND,  side: left, signal: power, net: gnd, number: "8" }
+  - { name: GP6,  side: left, signal: gpio, number: "9" }
+  - { name: GP7,  side: left, signal: gpio, number: "10" }
+  - { name: GP8,  side: left, signal: gpio, number: "11" }
+  - { name: GP9,  side: left, signal: gpio, number: "12" }
+  - { name: GND,  side: left, signal: power, net: gnd, number: "13" }
+  - { name: GP10, side: left, signal: gpio, number: "14" }
+  - { name: GP11, side: left, signal: gpio, number: "15" }
+  - { name: GP12, side: left, signal: gpio, number: "16" }
+  - { name: GP13, side: left, signal: gpio, number: "17" }
+  - { name: GND,  side: left, signal: power, net: gnd, number: "18" }
+  - { name: GP14, side: left, signal: gpio, number: "19" }
+  - { name: GP15, side: left, signal: gpio, number: "20" }
+  # --- right header, physical pins 40..21, top to bottom ---
+  - { name: VBUS, side: right, signal: power, net: vbus, dir: power, number: "40" }
+  - { name: VSYS, side: right, signal: power, net: vin,  dir: power, number: "39" }
+  - { name: GND,  side: right, signal: power, net: gnd, number: "38" }
+  - { name: 3V3_EN, side: right, signal: gpio, number: "37" }
+  - { name: 3V3,  side: right, signal: power, net: 3v3, dir: power, label: "3V3", number: "36" }
+  - { name: ADC_VREF, side: right, signal: analog, number: "35" }
+  - { name: GP28, side: right, signal: gpio, number: "34" }
+  - { name: GND,  side: right, signal: power, net: gnd, number: "33" }
+  - { name: GP27, side: right, signal: gpio, number: "32" }
+  - { name: GP26, side: right, signal: gpio, number: "31" }
+  - { name: RUN,  side: right, signal: gpio, number: "30" }
+  - { name: GP22, side: right, signal: gpio, number: "29" }
+  - { name: GND,  side: right, signal: power, net: gnd, number: "28" }
+  - { name: GP21, side: right, signal: gpio, number: "27" }
+  - { name: GP20, side: right, signal: gpio, number: "26" }
+  - { name: GP19, side: right, signal: gpio, number: "25" }
+  - { name: GP18, side: right, signal: gpio, number: "24" }
+  - { name: GND,  side: right, signal: power, net: gnd, number: "23" }
+  - { name: GP17, side: right, signal: gpio, number: "22" }
+  - { name: GP16, side: right, signal: gpio, number: "21" }

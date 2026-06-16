@@ -1,0 +1,25 @@
+id: pcm1808
+name: PCM1808 (IC)
+package: ic
+style: chip
+description: Texas Instruments PCM1808 single-ended 24-bit 96 kHz stereo audio
+  ADC, 14-pin TSSOP (PW package). Pin numbers and layout per datasheet, top view.
+  MD1/MD0 select master/slave; FMT selects I2S vs left-justified.
+width: 150
+pins:
+  # left column, pins 1..7 (top to bottom)
+  - { name: VREF, side: left, signal: analog, number: "1" }
+  - { name: AGND, side: left, signal: power, net: agnd, number: "2" }
+  - { name: VCC,  side: left, signal: power, net: 5v,  dir: power, number: "3", label: "VCC (5V)" }
+  - { name: VDD,  side: left, signal: power, net: 3v3, dir: power, number: "4", label: "VDD (3V3)" }
+  - { name: DGND, side: left, signal: power, net: gnd, number: "5" }
+  - { name: SCKI, side: left, signal: i2s, role: mck,  dir: in,    number: "6" }
+  - { name: LRCK, side: left, signal: i2s, role: lrck, dir: bidir, number: "7" }
+  # right column, pins 14..8 (top to bottom)
+  - { name: VINR, side: right, signal: analog, dir: in, number: "14" }
+  - { name: VINL, side: right, signal: analog, dir: in, number: "13" }
+  - { name: FMT,  side: right, signal: gpio, role: ctrl, number: "12" }
+  - { name: MD1,  side: right, signal: gpio, role: ctrl, number: "11" }
+  - { name: MD0,  side: right, signal: gpio, role: ctrl, number: "10" }
+  - { name: DOUT, side: right, signal: i2s, role: out,  dir: out,   number: "9" }
+  - { name: BCK,  side: right, signal: i2s, role: bck,  dir: bidir, number: "8" }

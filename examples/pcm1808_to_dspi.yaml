@@ -1,0 +1,51 @@
+title: PCM1808 ADC to DSPi (I2S input)
+subtitle: Raspberry Pi Pico 2 as I2S clock master; PCM1808 configured as slave
+
+parts:
+  adc:
+    part: pcm1808_board
+    region: left
+    label: PCM1808 ADC (AliExpress)
+    offset_x: 48      # nudge the board nearer the Pico
+    offset_y: 24      # align board GND with the Pico GND for a straight run
+  pico:
+    part: pico2
+    region: right
+    label: Pico 2 (DSPi)
+
+connections:
+  # The whole I2S bus in one shorthand; expands to four teal wires.
+  # DSPi defaults: BCK=GP14, LRCLK=GP15, MCK/SCKI=GP13, DATA in=GP4.
+  - bus: i2s
+    from: pico
+    to: adc
+    map:
+      GP14: BCK
+      GP15: LRC
+      GP13: SCK
+      GP4: OUT
+  # Power: +5V from USB (VBUS) plus the 3.3V digital rail, and ground.
+  # Route the two supply wires under the Pico to avoid crossing the I2S bus;
+  # 3.3V takes the inner lane, VBUS the outer.
+  - { from: pico.3V3, to: adc.3V3, route: bottom }
+  - { from: pico.VBUS, to: adc.5V, route: bottom }
+  - { from: pico.GND, to: adc.GND }
+  # Mode pins: configure MD1/MD0/FMT low (to the board's own GND) for slave,
+  # standard-I2S, 24-bit mode.
+  - { from: adc.FMT, to: adc.GND }
+  - { from: adc.MD1, to: adc.GND }
+  - { from: adc.MD0, to: adc.GND }
+
+annotations:
+  - card: DSPi I2S input
+    rows:
+      Input source: I2S
+      Sample rate: 48 kHz
+      Clock role: DSPi is master
+      MCK: 256x (drives SCKI)
+      Data pin: GP4 (default)
+  - card: PCM1808 Mode Pins
+    rows:
+      MD1: LOW
+      MD0: LOW
+      FMT: LOW

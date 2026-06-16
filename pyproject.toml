@@ -1,0 +1,26 @@
+[project]
+name = "wiregen"
+version = "0.1.0"
+description = "Declarative generator for beautiful, modern wiring diagrams"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.5",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+png = ["cairosvg>=2.7"]
+
+[project.scripts]
+wiregen = "wiregen.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["wiregen"]
+
+[tool.setuptools.package-data]
+wiregen = ["parts/*.yaml"]

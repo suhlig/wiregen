@@ -1,0 +1,47 @@
+id: pcm1808_board
+name: PCM1808 ADC Board
+package: board
+style: pcb
+color: "#5e2f86"        # the common purple AliExpress PCB
+description: >-
+  Common purple AliExpress PCM1808 breakout, 24-bit stereo audio ADC. Analog
+  line inputs (RIN/GND/LIN) along the top edge; control pins on the left, I2S
+  and power on the right. For use as an I2S slave configure MD1/MD0/FMT low
+  (standard-I2S, 24-bit). SCK is the system-clock (SCKI) input. Pin layout taken
+  from the board silkscreen (note the board misprints FMT as "FMY").
+width: 172
+height: 224        # ~1:1.3 (slightly taller than wide), like the real board
+pins:
+  # top edge: analog line inputs (left to right)
+  - { name: RIN, side: top, signal: analog, dir: in, label: RIN }
+  - { name: GNDA, side: top, signal: power, net: agnd, label: GND }
+  - { name: LIN, side: top, signal: analog, dir: in, label: LIN }
+  # left edge: control + power (top to bottom)
+  - { name: FMT, side: left, signal: gpio, role: ctrl, label: FMT }
+  - { name: MD1, side: left, signal: gpio, role: ctrl }
+  - { name: MD0, side: left, signal: gpio, role: ctrl }
+  - { name: GND, side: left, signal: power, net: gnd }
+  - { name: "3V3", side: left, signal: power, net: 3v3, dir: power, label: "3.3" }
+  - { name: "5V", side: left, signal: power, net: 5v, dir: power, label: "+5V" }
+  # right edge: I2S + power (top to bottom)
+  - { name: BCK, side: right, signal: i2s, role: bck,  dir: in }
+  - { name: OUT, side: right, signal: i2s, role: out,  dir: out }
+  - { name: LRC, side: right, signal: i2s, role: lrck, dir: in }
+  - { name: SCK, side: right, signal: i2s, role: mck,  dir: in }
+  - { name: GND, side: right, signal: power, net: gnd }
+  - { name: "3V3", side: right, signal: power, net: 3v3, dir: power, label: "3.3V" }
+decorations:
+  # uniform caps in two columns, pulled in from the edges and closer together:
+  # left column of three (even vertical spacing), right column of two
+  - { type: cap, at: [0.35, 0.225], r: 20, label: "10 100V VT" }
+  - { type: cap, at: [0.35, 0.50], r: 20, label: "10 100V VT" }
+  - { type: cap, at: [0.35, 0.775], r: 20, label: "10 100V VT" }
+  - { type: cap, at: [0.65, 0.225], r: 20, label: "10 100V VT" }
+  - { type: cap, at: [0.65, 0.775], r: 20, label: "10 100V VT" }
+  # the PCM1808 IC, aligned in the right column between its two caps
+  - { type: ic, at: [0.65, 0.50], w: 28, h: 42 }
+  # four mounting holes in the corners
+  - { type: hole, at: [0.10, 0.08], r: 9 }
+  - { type: hole, at: [0.90, 0.08], r: 9 }
+  - { type: hole, at: [0.10, 0.92], r: 9 }
+  - { type: hole, at: [0.90, 0.92], r: 9 }
