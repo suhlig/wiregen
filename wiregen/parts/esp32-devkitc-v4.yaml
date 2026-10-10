@@ -1,0 +1,63 @@
+id: esp32-devkitc-v4
+name: Espressif ESP32-DevKitC V4
+package: board
+style: pcb
+color: "#1a1a1a"        # the black DevKitC PCB
+connector: usb
+description: >-
+  Espressif ESP32-DevKitC V4 (ESP32-WROOM-32). The two 19-pin headers (J2 left,
+  J3 right) are drawn in their physical order, top to bottom, with the micro-USB
+  connector at the top. Names are the GPIO designations; the parenthesised
+  alt-functions (VP/VN, SD2/SD3/CMD/SD1/SD0/CLK, TX0/RX0) are from the official
+  pinout. IO34-IO39 are input-only, and IO0/IO2/IO12/IO15 are strapping pins.
+width: 150
+pins:
+  # --- left header (J2), top to bottom ---
+  - { name: "3V3", side: left, signal: power, net: 3v3, dir: power, label: "3V3" }
+  - { name: EN, side: left, signal: gpio, label: "EN" }
+  - { name: IO36, side: left, signal: gpio, dir: in, label: "IO36 (VP)" }
+  - { name: IO39, side: left, signal: gpio, dir: in, label: "IO39 (VN)" }
+  - { name: IO34, side: left, signal: gpio, dir: in }
+  - { name: IO35, side: left, signal: gpio, dir: in }
+  - { name: IO32, side: left, signal: gpio }
+  - { name: IO33, side: left, signal: i2s, role: din, dir: in, label: "IO33 (DIN)" }
+  - { name: IO25, side: left, signal: i2s, role: lrck, dir: out, label: "IO25 (LRCLK)" }
+  - { name: IO26, side: left, signal: i2s, role: bck, dir: out, label: "IO26 (BCLK)" }
+  - { name: IO27, side: left, signal: gpio }
+  - { name: IO14, side: left, signal: gpio }
+  - { name: IO12, side: left, signal: gpio, label: "IO12" }
+  - { name: GND, side: left, signal: power, net: gnd }
+  - { name: IO13, side: left, signal: gpio }
+  - { name: IO9, side: left, signal: gpio, label: "IO9 (SD2)" }
+  - { name: IO10, side: left, signal: gpio, label: "IO10 (SD3)" }
+  - { name: IO11, side: left, signal: gpio, label: "IO11 (CMD)" }
+  - { name: "5V", side: left, signal: power, net: 5v, dir: power, label: "5V" }
+  # --- right header (J3), top to bottom ---
+  - { name: GND, side: right, signal: power, net: gnd }
+  - { name: IO23, side: right, signal: gpio }
+  - { name: IO22, side: right, signal: gpio }
+  - { name: IO1, side: right, signal: uart, role: tx, dir: bidir, label: "IO1 (TX0)" }
+  - { name: IO3, side: right, signal: uart, role: rx, dir: bidir, label: "IO3 (RX0)" }
+  - { name: IO21, side: right, signal: gpio }
+  - { name: GND, side: right, signal: power, net: gnd }
+  - { name: IO19, side: right, signal: gpio }
+  - { name: IO18, side: right, signal: gpio }
+  - { name: IO5, side: right, signal: gpio }
+  - { name: IO17, side: right, signal: gpio }
+  - { name: IO16, side: right, signal: gpio }
+  - { name: IO4, side: right, signal: gpio }
+  - { name: IO0, side: right, signal: gpio, label: "IO0" }
+  - { name: IO2, side: right, signal: gpio, label: "IO2" }
+  - { name: IO15, side: right, signal: gpio, label: "IO15" }
+  - { name: IO8, side: right, signal: gpio, label: "IO8 (SD1)" }
+  - { name: IO7, side: right, signal: gpio, label: "IO7 (SD0)" }
+  - { name: IO6, side: right, signal: gpio, label: "IO6 (CLK)" }
+decorations:
+  # simplified silhouette, micro-USB at top to match the header order:
+  # the ESP32-WROOM-32 module (shielded can) with its antenna at the top edge
+  - { type: ic, at: [0.5, 0.30], w: 74, h: 58 }
+  # EN and BOOT buttons beside the USB connector
+  - { type: button, at: [0.17, 0.62], w: 26, h: 15 }
+  - { type: button, at: [0.17, 0.74], w: 26, h: 15 }
+  # power LED
+  - { type: dot, at: [0.30, 0.50], r: 3 }
