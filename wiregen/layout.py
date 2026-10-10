@@ -5,6 +5,7 @@ card placement, and the final canvas bounds. No pixel bookkeeping upstream.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 from .connections import expand
@@ -104,6 +105,7 @@ class PlacedPart:
     pins: list[PlacedPin]
     style: str
     package: str
+    shape: str = "rect"
     color: str | None = None
     connector: str | None = None
 
@@ -160,6 +162,11 @@ def _body_size(part: PartDef, inst: PartInstance) -> tuple[float, float]:
     # need (would crowd them)
     h = max(computed_h, float(part.height)) if part.height else computed_h
     w = inst.width if getattr(inst, "width", None) else (part.width or DEFAULT_W)
+    if part.shape == "round":
+        # a round body is a circle: make the bounding box square so the pins
+        # ride the rim and centred decorations stay inside
+        side = max(float(w), float(h))
+        w = h = side
     return float(w), float(h)
 
 
@@ -169,27 +176,37 @@ def _place_pins(part: PartDef, inst: PartInstance, box: Box) -> list[PlacedPin]:
         sides[_eff_side(p.side, inst.flip)].append(p)
     placed: list[PlacedPin] = []
     # all pins use the same fixed pitch (matching every board); a taller body
-    # just gains margin. Side pins centre vertically in the padded region;
-    # top/bottom pins centre on the body width.
+    # just gains margin. On a rect body side pins sit on the edge (centred
+    # vertically) and top/bottom pins centre on the width; on a round body the
+    # pins ride the rim so the pads hug the circle.
     pitch = PIN_PITCH
+    cx, cy = box.cx, box.y + box.h / 2
+    radius = min(box.w, box.h) / 2
+    round_body = part.shape == "round"
     for side, pins in sides.items():
         n = len(pins)
         if n == 0:
             continue
-        if side in ("left", "right"):
-            x = box.x if side == "left" else box.right
-            center = box.y + box.h / 2   # true body centre, not the padded region
-            for i, p in enumerate(pins):
-                y = center + (i - (n - 1) / 2) * pitch
-                placed.append(PlacedPin(p.name, p.text, p.number, p.net,
-                                        p.signal, p.role, x, y, side))
-        else:
-            y = box.y if side == "top" else box.bottom
-            start = box.cx - (n - 1) / 2 * pitch
-            for i, p in enumerate(pins):
-                x = start + i * pitch
-                placed.append(PlacedPin(p.name, p.text, p.number, p.net,
-                                        p.signal, p.role, x, y, side))
+        for i, p in enumerate(pins):
+            off = (i - (n - 1) / 2) * pitch
+            if side in ("left", "right"):
+                if round_body:
+                    dx = math.sqrt(max(0.0, radius * radius - off * off))
+                    x = cx - dx if side == "left" else cx + dx
+                    y = cy + off
+                else:
+                    x = box.x if side == "left" else box.right
+                    y = cy + off
+            else:
+                if round_body:
+                    dy = math.sqrt(max(0.0, radius * radius - off * off))
+                    x = cx + off
+                    y = cy - dy if side == "top" else cy + dy
+                else:
+                    x = cx + off
+                    y = box.y if side == "top" else box.bottom
+            placed.append(PlacedPin(p.name, p.text, p.number, p.net,
+                                    p.signal, p.role, x, y, side))
     return placed
 
 
@@ -234,7 +251,8 @@ def build(diagram: Diagram, lib: Library, theme: Theme = DEFAULT_THEME) -> Geome
             pins = _place_pins(pdef, inst, box)
             placed[iid] = PlacedPart(iid, pdef, inst.label or pdef.name,
                                      box, pins, pdef.style or "card",
-                                     pdef.package, pdef.color, pdef.connector)
+                                     pdef.package, pdef.shape,
+                                     pdef.color, pdef.connector)
             y += h + VGAP
 
     parts_top = min((p.box.y for p in placed.values()), default=TOP)

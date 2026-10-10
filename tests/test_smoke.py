@@ -80,6 +80,23 @@ def test_unknown_theme_raises():
         raise AssertionError("expected KeyError")
 
 
+def test_inmp441_is_a_round_two_row_board():
+    lib = Library.load()
+    mic = lib.get("inmp441")
+    assert mic.shape == "round"
+    sides = [p.side for p in mic.pins]
+    assert sides.count("top") == 3        # SCK, WS, L/R
+    assert sides.count("bottom") == 3     # SD, VDD, GND
+
+
+def test_round_board_renders_as_a_circle():
+    lib = Library.load()
+    d = Diagram.model_validate({"parts": {"mic": {"part": "inmp441"}}})
+    svg = render(build(d, lib))
+    assert 'r="66.0"' in svg               # body = inscribed circle of 132px
+    assert any(d.type == "notch" for d in lib.get("inmp441").decorations)
+
+
 def test_unknown_pin_is_error():
     lib = Library.load()
     d = Diagram.model_validate({

@@ -48,7 +48,8 @@ class Decoration(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    type: Literal["cap", "resistor", "ic", "dot", "hole", "button", "logo"]
+    type: Literal["cap", "resistor", "ic", "dot", "hole", "button",
+                  "logo", "notch"]
     at: tuple[float, float]
     r: Optional[float] = None      # cap/dot radius (px)
     w: Optional[float] = None      # resistor/ic width (px)
@@ -66,6 +67,7 @@ class PartDef(BaseModel):
     name: str
     package: Literal["board", "module", "ic", "header", "component"] = "module"
     style: Optional[str] = None        # render hint: "pcb", "chip", "card"
+    shape: Literal["rect", "round"] = "rect"   # body silhouette (round PCB)
     color: Optional[str] = None        # board substrate colour (e.g. purple PCB)
     connector: Optional[str] = None    # top-edge connector hint, e.g. "usb"
     description: Optional[str] = None

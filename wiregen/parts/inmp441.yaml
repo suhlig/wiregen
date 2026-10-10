@@ -2,27 +2,33 @@ id: inmp441
 name: INMP441 I2S Microphone
 package: board
 style: pcb
+shape: round
 color: "#1f6feb"        # the common blue breakout PCB
 description: >-
-  INMP441 I2S MEMS microphone breakout (6-pin). VDD is 3V3 only. Tie L/R to GND
-  to select the left channel (leave it high for right). SCK is the bit clock
-  (BCLK), WS the word select / frame clock (LRCLK), SD the serial data output.
-  Pin order follows the common breakout: power and channel select first, then
-  the three I2S lines.
+  INMP441 I2S MEMS microphone breakout (6-pin), on the common round blue PCB.
+  VDD is 3V3 only. Tie L/R to GND to select the left channel (leave it high to
+  select the right). SCK is the bit clock (BCLK), WS the word select / frame
+  clock (LRCLK), SD the serial data output. The six pads sit in two rows of
+  three across the board: the I2S clocks and channel select (SCK, WS, L/R)
+  along one edge, the data line and power (SD, VDD, GND) along the opposite
+  edge. The board has an alignment notch on the rim and no mounting holes.
 width: 132
-height: 108
+height: 132            # round board: square box, drawn as an inscribed circle
 pins:
-  # single header along the edge that faces the host board
-  - { name: VDD, side: right, signal: power, net: 3v3, dir: power, number: "1", label: "VDD (3V3)" }
-  - { name: GND, side: right, signal: power, net: gnd, dir: power, number: "2" }
-  - { name: L/R, side: right, signal: gpio, role: ctrl, number: "3" }
-  - { name: SCK, side: right, signal: i2s, role: bck, dir: in, number: "4" }
-  - { name: WS,  side: right, signal: i2s, role: lrck, dir: in, number: "5" }
-  - { name: SD,  side: right, signal: i2s, role: dout, dir: out, number: "6" }
+  # top row of three pads
+  - { name: SCK, side: top, signal: i2s, role: bck, dir: in }
+  - { name: WS,  side: top, signal: i2s, role: lrck, dir: in }
+  - { name: "L/R", side: top, signal: gpio, role: ctrl }
+  # bottom row of three pads
+  - { name: SD,  side: bottom, signal: i2s, role: dout, dir: out }
+  - { name: VDD, side: bottom, signal: power, net: 3v3, dir: power }
+  - { name: GND, side: bottom, signal: power, net: gnd, dir: power }
 decorations:
-  # the MEMS die and the sound port
-  - { type: ic, at: [0.36, 0.52], w: 30, h: 30, label: "INMP441" }
-  - { type: dot, at: [0.74, 0.52], r: 8 }
-  # two mounting holes
-  - { type: hole, at: [0.14, 0.16], r: 4 }
-  - { type: hole, at: [0.14, 0.88], r: 4 }
+  # alignment notch on the rim, centred on the top edge
+  - { type: notch, at: [0.5, 0.0], r: 11 }
+  # the MEMS die (metal can) with its sound port
+  - { type: ic, at: [0.5, 0.5], w: 46, h: 42 }
+  - { type: dot, at: [0.5, 0.63], r: 4 }
+  # the two SMD passives on the left flank
+  - { type: resistor, at: [0.28, 0.40], w: 16, h: 7, rot: 90 }
+  - { type: resistor, at: [0.28, 0.50], w: 16, h: 7, rot: 90 }

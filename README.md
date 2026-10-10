@@ -301,6 +301,8 @@ referenced by id. Bundled parts:
 | `pico2` | Raspberry Pi Pico 2 (RP2350), 40-pin board. |
 | `pcm1808` | PCM1808 stereo ADC, bare 14-pin TSSOP IC. |
 | `pcm1808_board` | The common purple PCM1808 breakout board. |
+| `inmp441` | INMP441 I2S MEMS mic, the common round blue breakout. |
+| `raspberry-pi-3` | Raspberry Pi 3 Model B, 40-pin header. |
 
 ### A part definition
 
@@ -313,6 +315,7 @@ appear** — only which physical side each pin is on.
 | `name` | Human name (default label). |
 | `package` | `board`, `module`, `ic`, `header`, `component`. |
 | `style` | Render hint: `pcb`, `chip`, `card`. |
+| `shape` | Body silhouette: `rect` (default) or `round` (a circular PCB). |
 | `color` | Substrate colour (e.g. the green Pico PCB, the purple breakout). |
 | `connector` | Top-edge connector hint, e.g. `usb`. |
 | `description` | Free text shown by `describe-part`. |
@@ -333,9 +336,7 @@ appear** — only which physical side each pin is on.
 | `label` | Display text (defaults to `name`). |
 | `number` | Physical pin number / silk designator (printed on the pad). |
 
-Pins are placed by their order within each side and a fixed pitch — a taller
-body just gains margin. Numbered side pins render on enlarged pads with the
-number printed on the copper, so a routed wire can never obscure it.
+Pins are placed by their order within each side and a fixed pitch — a taller body just gains margin. On a `round` body the pins ride the rim instead of the bounding-box edge, so the pads hug the circle. Numbered side pins render on enlarged pads with the number printed on the copper, so a routed wire can never obscure it.
 
 ### Decorations
 
@@ -351,10 +352,9 @@ normalised `[x, y]` in `0..1`, so decorations scale with the body.
 | `hole` | Plated mounting hole | `r` |
 | `button` | SMD tactile button (e.g. BOOTSEL) | `w`, `h`, `label` |
 | `logo` | The Raspberry Pi mark, in silkscreen | `r` |
+| `notch` | Canvas-coloured bite in the rim (board-alignment notch) | `r` |
 
-All accept `rot` (degrees about the centre). The Pico's RP2350, BOOTSEL button,
-status LED, debug header, and Pi logo are all just decorations — see
-[`wiregen/parts/pico2.yaml`](wiregen/parts/pico2.yaml).
+All accept `rot` (degrees about the centre). A `notch` is only useful on a `round` body, where it cuts a bite out of the rim. The Pico's RP2350, BOOTSEL button, status LED, debug header, and Pi logo are all just decorations — see [`wiregen/parts/pico2.yaml`](wiregen/parts/pico2.yaml).
 
 ### Adding your own part
 

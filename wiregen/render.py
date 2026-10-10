@@ -99,6 +99,18 @@ def _body_rect(box, fill, stroke, sw, r, shadow) -> str:
             f'stroke-width="{sw}"{filt}/>')
 
 
+def _body_circle(box, fill, stroke, theme: Theme) -> str:
+    # a round PCB: the body is the inscribed circle, so pins placed on the box
+    # edge land on the rim
+    r = min(box.w, box.h) / 2
+    cx = box.x + box.w / 2
+    cy = box.y + box.h / 2
+    filt = ' filter="url(#soft)"' if theme.shadow else ""
+    return (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" '
+            f'fill="{fill}" stroke="{stroke}" '
+            f'stroke-width="{theme.body_stroke_w}"{filt}/>')
+
+
 def _label_lines(label: str) -> list[str]:
     """Split a trailing parenthetical onto its own line, e.g.
     'PCM1808 ADC (AliExpress)' -> ['PCM1808 ADC', '(AliExpress)']."""
@@ -112,8 +124,11 @@ def _part_pcb(p: PlacedPart, theme: Theme) -> str:
     b = p.box
     fill = p.color or theme.pcb_fill
     stroke = _darken(p.color, 0.62) if p.color else theme.pcb_stroke
-    out = [_body_rect(b, fill, stroke, theme.body_stroke_w,
-                      theme.body_radius, theme.shadow)]
+    if p.shape == "round":
+        out = [_body_circle(b, fill, stroke, theme)]
+    else:
+        out = [_body_rect(b, fill, stroke, theme.body_stroke_w,
+                          theme.body_radius, theme.shadow)]
     # top-edge connector hint (e.g. USB), only when the part declares one
     if p.connector:
         out.append(f'<rect x="{b.cx-16:.1f}" y="{b.y-7:.1f}" width="32" '
@@ -121,7 +136,12 @@ def _part_pcb(p: PlacedPart, theme: Theme) -> str:
     # simplified on-board components, beneath the pins/labels
     out.append(_decorations(p, theme))
     has_top = any(pin.side == "top" for pin in p.pins)
-    if has_top:
+    if p.shape == "round":
+        # round board: the identity sits inside the rim, above the on-board parts
+        out.append(f'<text x="{b.cx:.1f}" y="{b.y + b.h*0.26:.1f}" '
+                   f'text-anchor="middle" font-size="11" font-weight="700" '
+                   f'fill="#ffffff">{escape(p.label)}</text>')
+    elif has_top:
         # top pins occupy the upper edge, so the identity sits on the board near
         # the bottom; a trailing "(...)" drops to its own line
         lines = _label_lines(p.label)
@@ -146,7 +166,7 @@ def _decorations(p: PlacedPart, theme: Theme) -> str:
     for d in p.part.decorations:
         cx = b.x + d.at[0] * b.w
         cy = b.y + d.at[1] * b.h
-        g = _decoration_shape(d, cx, cy)
+        g = _decoration_shape(d, cx, cy, theme)
         if d.rot:
             out.append(f'<g transform="rotate({d.rot:.0f} {cx:.1f} {cy:.1f})">'
                        f'{g}</g>')
@@ -155,7 +175,7 @@ def _decorations(p: PlacedPart, theme: Theme) -> str:
     return "".join(out)
 
 
-def _decoration_shape(d, cx: float, cy: float) -> str:
+def _decoration_shape(d, cx: float, cy: float, theme: Theme) -> str:
     if d.type == "cap":
         r = d.r or 18.0
         # metallic can; left third darkened as a simple polarity mark
@@ -256,6 +276,13 @@ def _decoration_shape(d, cx: float, cy: float) -> str:
             f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r*0.52:.1f}" '
             f'fill="#2c2630"/>'
         )
+    if d.type == "notch":
+        # a bite out of the rim (board-alignment notch): paint the canvas colour
+        # over the edge; being canvas-coloured it simply interrupts the rim,
+        # reading as a cut-out
+        r = d.r or 10.0
+        return (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" '
+                f'fill="{theme.bg}"/>')
     # dot
     r = d.r or 3.0
     return f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="#4b5563"/>'
