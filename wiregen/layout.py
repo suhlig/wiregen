@@ -27,6 +27,7 @@ TRACK_GAP = 19.0        # minimum elbow spacing
 TRACK_GAP_MAX = 36.0    # cap on elbow spacing when spreading
 LANE_GAP = 18.0
 WRAP_GAP = 12.0
+PIN_FAN = 7.0           # separation of wires that leave the same pin (a fan-out)
 WRAP_CLEAR = 30.0       # wrap clearance for parts with pin numbers
 WRAP_CLEAR_MIN = 13.0   # wrap clearance for parts with nothing protruding
 TRACK_MARGIN = 30.0     # keep elbow tracks this far inside the channel edges
@@ -366,7 +367,28 @@ def build(diagram: Diagram, lib: Library, theme: Theme = DEFAULT_THEME) -> Geome
     lane_bottom = 0
     wrap_n = 0        # offsets are global, so a top wrap and a bottom wrap that
                       # leave the same board edge never share a vertical
-    for it in items:
+
+    # a pin that carries several wires (a fan-out, e.g. a GND pad feeding two
+    # destinations) would draw their first segments on top of each other; spread
+    # them apart at the pin so nothing overlaps
+    share: dict[int, list[int]] = {}
+    for i, (pa, pb, *_rest) in enumerate(resolved):
+        share.setdefault(id(pa), []).append(i)
+        share.setdefault(id(pb), []).append(i)
+
+    def _fan(i: int, pin: PlacedPin) -> float:
+        group = share.get(id(pin), ())
+        if len(group) <= 1:
+            return 0.0
+
+        def far_y(k: int) -> float:
+            pa, pb = resolved[k][0], resolved[k][1]
+            return (pb if pa is pin else pa).y
+
+        order = sorted(group, key=far_y)
+        return (order.index(i) - (len(group) - 1) / 2.0) * PIN_FAN
+
+    for i, it in enumerate(items):
         pa_pin, pb_pin, color, label, route, box_a, box_b, kind = it[:8]
         if kind == "jumper":
             dist = abs(pa_pin.y - pb_pin.y) + abs(pa_pin.x - pb_pin.x)
@@ -392,7 +414,8 @@ def build(diagram: Diagram, lib: Library, theme: Theme = DEFAULT_THEME) -> Geome
         off = wrap_n * WRAP_GAP
         wrap_n += 1
         pts = _route_around(pa_pin, box_a, pb_pin, box_b, lane_y, off,
-                            part_clear[id(box_a)], part_clear[id(box_b)])
+                            part_clear[id(box_a)], part_clear[id(box_b)],
+                            _fan(i, pa_pin), _fan(i, pb_pin))
         wires.append(RoutedWire(_clean(pts), color, label))
 
     # 4. cards in a far-right column
@@ -498,28 +521,37 @@ def _approach(pin: PlacedPin, own: Box, other: Box,
 
 
 def _drop_to_lane(pin: PlacedPin, box: Box, lane_y: float, off: float,
-                  clear: float) -> list[tuple[float, float]]:
+                  clear: float, fan: float = 0.0) -> list[tuple[float, float]]:
     """Exit a pin on its own edge and run to a horizontal lane above/below the
     parts. ``clear`` is the base outward clearance (large enough to clear pin
     numbers, small to hug an edge with nothing protruding); ``off`` pushes the
-    vertical run further out so parallel wraps on the same edge never share x."""
+    vertical run further out so parallel wraps on the same edge never share x.
+    ``fan`` nudges wires that share a pin apart, perpendicular to their exit."""
     if pin.side == "left":
         x = box.x - clear - off
-        return [(pin.x, pin.y), (x, pin.y), (x, lane_y)]
+        if abs(fan) < 0.01:
+            return [(pin.x, pin.y), (x, pin.y), (x, lane_y)]
+        return [(pin.x, pin.y), (pin.x, pin.y + fan),
+                (x, pin.y + fan), (x, lane_y)]
     if pin.side == "right":
         x = box.right + clear + off
-        return [(pin.x, pin.y), (x, pin.y), (x, lane_y)]
+        if abs(fan) < 0.01:
+            return [(pin.x, pin.y), (x, pin.y), (x, lane_y)]
+        return [(pin.x, pin.y), (pin.x, pin.y + fan),
+                (x, pin.y + fan), (x, lane_y)]
     # top / bottom pins drop straight to the lane
-    return [(pin.x, pin.y), (pin.x, lane_y)]
+    if abs(fan) < 0.01:
+        return [(pin.x, pin.y), (pin.x, lane_y)]
+    return [(pin.x, pin.y), (pin.x + fan, pin.y), (pin.x + fan, lane_y)]
 
 
 def _route_around(pa: PlacedPin, box_a: Box, pb: PlacedPin, box_b: Box,
-                  lane_y: float, off: float, clear_a: float,
-                  clear_b: float) -> list[tuple[float, float]]:
+                  lane_y: float, off: float, clear_a: float, clear_b: float,
+                  fan_a: float = 0.0, fan_b: float = 0.0) -> list[tuple[float, float]]:
     """Route a wire around the top/bottom: both ends drop to a shared lane near
     their own part edge, then meet along the lane (kept out of the channel)."""
-    a = _drop_to_lane(pa, box_a, lane_y, off, clear_a)
-    b = _drop_to_lane(pb, box_b, lane_y, off, clear_b)
+    a = _drop_to_lane(pa, box_a, lane_y, off, clear_a, fan_a)
+    b = _drop_to_lane(pb, box_b, lane_y, off, clear_b, fan_b)
     return a + list(reversed(b))
 
 

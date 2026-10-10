@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 
-from wiregen.layout import build
+from wiregen.layout import Box, PlacedPin, _drop_to_lane, build
 from wiregen.library import Library
 from wiregen.model import Diagram
 from wiregen.render import render
@@ -171,3 +171,14 @@ def test_wires_leave_each_pin_on_its_own_side():
             dx = w.points[nbr][0] - pt[0]
             dy = w.points[nbr][1] - pt[1]
             assert dx * ox + dy * oy > 0, (pin.name, pin.side, (dx, dy))
+
+
+def test_shared_pin_fans_wires_apart_but_still_outward():
+    box = Box(0, 0, 100, 200)
+    pin = PlacedPin("GND", "GND", None, "gnd", "power", None, 100, 100, "right")
+    up = _drop_to_lane(pin, box, lane_y=-20, off=0, clear=10, fan=-7)
+    down = _drop_to_lane(pin, box, lane_y=220, off=0, clear=10, fan=7)
+    # the two stubs leave at different heights, so they never overlap
+    assert up[1][1] != down[1][1]
+    # and each still heads out of the pin's side (right edge)
+    assert up[2][0] > pin.x and down[2][0] > pin.x
