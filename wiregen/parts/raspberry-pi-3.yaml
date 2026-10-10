@@ -1,0 +1,64 @@
+id: raspberry-pi-3
+name: Raspberry Pi 3 Model B
+package: board
+style: pcb
+color: "#1c7a43"        # the Raspberry Pi PCB green
+connector: usb
+description: >-
+  Raspberry Pi 3 Model B. The 40-pin J8 GPIO header is drawn as the two physical
+  rows: odd pins 1,3,...,39 down the left, even pins 2,4,...,40 down the right,
+  so pins 1-2, 3-4, ... sit side by side as on the real board. Pin numbers are
+  the physical header positions; the parenthesised alt-functions (I2C, SPI,
+  UART, I2S/PCM) are from the official pinout.
+width: 190
+pins:
+  # --- left row: odd pins 1..39, top to bottom ---
+  - { name: "3V3", side: left, signal: power, net: 3v3, dir: power, label: "3V3", number: "1" }
+  - { name: GPIO2, side: left, signal: i2c, role: sda, dir: bidir, number: "3", label: "GPIO2 (SDA)" }
+  - { name: GPIO3, side: left, signal: i2c, role: scl, dir: bidir, number: "5", label: "GPIO3 (SCL)" }
+  - { name: GPIO4, side: left, signal: gpio, number: "7", label: "GPIO4 (CLK)" }
+  - { name: GND, side: left, signal: power, net: gnd, number: "9" }
+  - { name: GPIO17, side: left, signal: gpio, number: "11" }
+  - { name: GPIO27, side: left, signal: gpio, number: "13" }
+  - { name: GPIO22, side: left, signal: gpio, number: "15" }
+  - { name: "3V3", side: left, signal: power, net: 3v3, dir: power, label: "3V3", number: "17" }
+  - { name: GPIO10, side: left, signal: spi, role: mosi, dir: bidir, number: "19", label: "GPIO10 (MOSI)" }
+  - { name: GPIO9, side: left, signal: spi, role: miso, dir: bidir, number: "21", label: "GPIO9 (MISO)" }
+  - { name: GPIO11, side: left, signal: spi, role: sclk, dir: bidir, number: "23", label: "GPIO11 (SCLK)" }
+  - { name: GND, side: left, signal: power, net: gnd, number: "25" }
+  - { name: GPIO0, side: left, signal: i2c, role: sda, dir: bidir, number: "27", label: "ID_SD (GPIO0)" }
+  - { name: GPIO5, side: left, signal: gpio, number: "29" }
+  - { name: GPIO6, side: left, signal: gpio, number: "31" }
+  - { name: GPIO13, side: left, signal: gpio, number: "33", label: "GPIO13 (PWM1)" }
+  - { name: GPIO19, side: left, signal: i2s, role: lrck, dir: bidir, number: "35", label: "GPIO19 (LRCLK)" }
+  - { name: GPIO26, side: left, signal: gpio, number: "37" }
+  - { name: GND, side: left, signal: power, net: gnd, number: "39" }
+  # --- right row: even pins 2..40, top to bottom ---
+  - { name: "5V", side: right, signal: power, net: 5v, dir: power, label: "5V", number: "2" }
+  - { name: "5V", side: right, signal: power, net: 5v, dir: power, label: "5V", number: "4" }
+  - { name: GND, side: right, signal: power, net: gnd, number: "6" }
+  - { name: GPIO14, side: right, signal: uart, role: tx, dir: bidir, number: "8", label: "GPIO14 (TXD)" }
+  - { name: GPIO15, side: right, signal: uart, role: rx, dir: bidir, number: "10", label: "GPIO15 (RXD)" }
+  - { name: GPIO18, side: right, signal: i2s, role: bck, dir: bidir, number: "12", label: "GPIO18 (BCLK)" }
+  - { name: GND, side: right, signal: power, net: gnd, number: "14" }
+  - { name: GPIO23, side: right, signal: gpio, number: "16" }
+  - { name: GPIO24, side: right, signal: gpio, number: "18" }
+  - { name: GND, side: right, signal: power, net: gnd, number: "20" }
+  - { name: GPIO25, side: right, signal: gpio, number: "22" }
+  - { name: GPIO8, side: right, signal: spi, role: cs, dir: bidir, number: "24", label: "GPIO8 (CE0)" }
+  - { name: GPIO7, side: right, signal: spi, role: cs, dir: bidir, number: "26", label: "GPIO7 (CE1)" }
+  - { name: GPIO1, side: right, signal: i2c, role: scl, dir: bidir, number: "28", label: "ID_SC (GPIO1)" }
+  - { name: GND, side: right, signal: power, net: gnd, number: "30" }
+  - { name: GPIO12, side: right, signal: gpio, number: "32", label: "GPIO12 (PWM0)" }
+  - { name: GND, side: right, signal: power, net: gnd, number: "34" }
+  - { name: GPIO16, side: right, signal: gpio, number: "36" }
+  - { name: GPIO20, side: right, signal: i2s, role: din, dir: in, number: "38", label: "GPIO20 (DIN)" }
+  - { name: GPIO21, side: right, signal: i2s, role: dout, dir: out, number: "40", label: "GPIO21 (DOUT)" }
+decorations:
+  # simplified silhouette: SoC, the Pi mark, and the four mounting holes
+  - { type: ic, at: [0.5, 0.42], w: 62, h: 62 }
+  - { type: logo, at: [0.5, 0.80], r: 30 }
+  - { type: hole, at: [0.08, 0.06], r: 6 }
+  - { type: hole, at: [0.92, 0.06], r: 6 }
+  - { type: hole, at: [0.08, 0.94], r: 6 }
+  - { type: hole, at: [0.92, 0.94], r: 6 }
