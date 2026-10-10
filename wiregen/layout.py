@@ -301,9 +301,13 @@ def build(diagram: Diagram, lib: Library, theme: Theme = DEFAULT_THEME) -> Geome
     for pa_pin, pb_pin, color, label, route in resolved:
         box_a = _owner_box(placed, pa_pin)
         box_b = _owner_box(placed, pb_pin)
+        # a top/bottom pin cannot run straight through the channel: it must
+        # leave on its own edge and detour above/below, like a pin facing away
+        vertical = bool({pa_pin.side, pb_pin.side} & {"top", "bottom"})
         if box_a is box_b and pa_pin.side == pb_pin.side:
             kind = "jumper"
         elif (route is not None
+              or vertical
               or _faces_away(pa_pin, box_a, box_b)
               or _faces_away(pb_pin, box_b, box_a)):
             kind = "wrap"
@@ -360,6 +364,8 @@ def build(diagram: Diagram, lib: Library, theme: Theme = DEFAULT_THEME) -> Geome
 
     lane_top = 0
     lane_bottom = 0
+    wrap_n = 0        # offsets are global, so a top wrap and a bottom wrap that
+                      # leave the same board edge never share a vertical
     for it in items:
         pa_pin, pb_pin, color, label, route, box_a, box_b, kind = it[:8]
         if kind == "jumper":
@@ -374,16 +380,17 @@ def build(diagram: Diagram, lib: Library, theme: Theme = DEFAULT_THEME) -> Geome
             wires.append(RoutedWire(_clean(appr_a + list(reversed(appr_b))),
                                     color, label))
             continue
-        # wrap around the top (default) or bottom; each wrap gets its own lane
-        # and its own outward offset so verticals never coincide
-        if route == "bottom":
+        # wrap around the top or bottom of the boards; each wrap gets its own
+        # lane and its own outward offset so verticals never coincide. The side
+        # follows the pins, so a bottom-edge pin drops rather than climbs.
+        if _wrap_side(pa_pin, pb_pin, route) == "bottom":
             lane_y = parts_bottom + 16 + lane_bottom * LANE_GAP
-            off = lane_bottom * WRAP_GAP
             lane_bottom += 1
         else:
             lane_y = parts_top - 16 - lane_top * LANE_GAP
-            off = lane_top * WRAP_GAP
             lane_top += 1
+        off = wrap_n * WRAP_GAP
+        wrap_n += 1
         pts = _route_around(pa_pin, box_a, pb_pin, box_b, lane_y, off,
                             part_clear[id(box_a)], part_clear[id(box_b)])
         wires.append(RoutedWire(_clean(pts), color, label))
@@ -447,6 +454,19 @@ def _faces_away(pin: PlacedPin, own: Box, other: Box) -> bool:
     if pin.side == "left":
         return other_is_right
     return False  # top/bottom always need a small detour, handled in approach
+
+
+def _wrap_side(pa: PlacedPin, pb: PlacedPin, route: str | None) -> str:
+    """Which edge a detouring wire wraps around. A wire must leave each pin on
+    the side that pin actually sits on, so a pin on the bottom edge drives the
+    wrap below the boards (and a top pin drives it above). Only side pins that
+    face away, with no top/bottom pin in the pair, fall back to the top."""
+    if route in ("top", "bottom"):
+        return route
+    sides = {pa.side, pb.side}
+    if "bottom" in sides and "top" not in sides:
+        return "bottom"
+    return "top"
 
 
 def _approach(pin: PlacedPin, own: Box, other: Box,

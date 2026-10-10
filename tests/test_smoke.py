@@ -106,3 +106,68 @@ def test_unknown_pin_is_error():
     })
     issues = validate(d, lib)
     assert any(i.severity == "error" and "GP999" in i.message for i in issues)
+
+
+# the INMP441 diagram: a round mic (pins on top and bottom) beside a Pi 3
+MIC_PI = {
+    "parts": {"mic": {"part": "inmp441", "region": "left"},
+              "pi": {"part": "raspberry-pi-3", "region": "right"}},
+    "connections": [
+        {"from": "pi.GPIO18", "to": "mic.SCK"},
+        {"from": "pi.GPIO19", "to": "mic.WS"},
+        {"from": "pi.GPIO20", "to": "mic.SD"},
+        {"from": "pi.3V3", "to": "mic.VDD", "route": "bottom"},
+        {"from": "pi.GND", "to": "mic.GND"},
+        {"from": "pi.GND", "to": "mic.L/R"},
+    ],
+}
+
+
+def _segments(geo):
+    return [(a, b) for w in geo.wires for a, b in zip(w.points, w.points[1:])]
+
+
+def _collinear_overlap(a, b, eps=0.6):
+    (ax0, ay0), (ax1, ay1) = a
+    (bx0, by0), (bx1, by1) = b
+    a_h = abs(ay0 - ay1) < 0.01
+    if a_h != (abs(by0 - by1) < 0.01):
+        return False
+    if a_h:
+        if abs(ay0 - by0) > eps:
+            return False
+        lo = max(min(ax0, ax1), min(bx0, bx1))
+        hi = min(max(ax0, ax1), max(bx0, bx1))
+    else:
+        if abs(ax0 - bx0) > eps:
+            return False
+        lo = max(min(ay0, ay1), min(by0, by1))
+        hi = min(max(ay0, ay1), max(by0, by1))
+    return hi - lo > eps
+
+
+def test_no_two_wire_segments_overlap():
+    segs = _segments(build(Diagram.model_validate(MIC_PI), Library.load()))
+    for i in range(len(segs)):
+        for j in range(i + 1, len(segs)):
+            assert not _collinear_overlap(segs[i], segs[j]), (segs[i], segs[j])
+
+
+def test_wires_leave_each_pin_on_its_own_side():
+    geo = build(Diagram.model_validate(MIC_PI), Library.load())
+    at = {(round(pin.x, 1), round(pin.y, 1)): pin
+          for part in geo.parts for pin in part.pins}
+    outward = {"top": (0, -1), "bottom": (0, 1),
+               "left": (-1, 0), "right": (1, 0)}
+    for w in geo.wires:
+        if len(w.points) < 2:
+            continue
+        for end, nbr in ((0, 1), (-1, -2)):
+            pt = w.points[end]
+            pin = at.get((round(pt[0], 1), round(pt[1], 1)))
+            if pin is None:
+                continue
+            ox, oy = outward[pin.side]
+            dx = w.points[nbr][0] - pt[0]
+            dy = w.points[nbr][1] - pt[1]
+            assert dx * ox + dy * oy > 0, (pin.name, pin.side, (dx, dy))
