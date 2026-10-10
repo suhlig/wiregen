@@ -2,7 +2,7 @@ id: esp32-devkitc-v4
 name: Espressif ESP32-DevKitC V4
 package: board
 style: pcb
-color: "#1a1a1a"        # the black DevKitC PCB
+color: "#b02a1f"        # the common red DevKitC PCB (legible on a dark canvas)
 connector: usb
 description: >-
   Espressif ESP32-DevKitC V4 (ESP32-WROOM-32). The two 19-pin headers (J2 left,
